@@ -1,5 +1,3 @@
-package com.example
-
 import org.specs._
 
 import dispatch._
