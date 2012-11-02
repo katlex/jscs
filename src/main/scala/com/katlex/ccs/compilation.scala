@@ -1,41 +1,46 @@
 package com.katlex.ccs
 
 import grizzled.slf4j.Logging
+import java.util.UUID
 
 object JsCompiler extends Logging {
   import com.google.javascript.jscomp._
 
   lazy val options = {
-    def make(list:Any*) =
+    type OptionModifier = CompilerOptions => Unit
+    implicit def compilationLevelAsModifier(cl:CompilationLevel):OptionModifier = cl.setOptionsForCompilationLevel(_)
+    implicit def warningLevelAsModifier(wl:WarningLevel):OptionModifier = wl.setOptionsForWarningLevel(_)
+
+    def make(list:OptionModifier*) =
       (new CompilerOptions /: list) {
-        case (ops, conf) =>
-          conf match {
-            case cl:CompilationLevel => cl.setOptionsForCompilationLevel(ops)
-            case wl:WarningLevel => wl.setOptionsForWarningLevel(ops)
-            case other => logger.warn("Incorrect compiler options setup provided: " + other)
-          }
+        case (ops, modifier) =>
+          modifier(ops)
           ops
       }
 
     make(
-      CompilationLevel.SIMPLE_OPTIMIZATIONS,
+      CompilationLevel.WHITESPACE_ONLY,
       WarningLevel.QUIET
     )
   }
 
   def compiler = new Compiler
 
-  def compile(code:String, fileName:String) = {
+  def compile(code:String) = {
     import SourceFile._
 
-    implicit def toSource(nameContent: (String, String)) = nameContent match {
+    implicit def toSource(nameContent: (Option[String], String)) = nameContent match {
       case (name, content) =>
-        (new Builder).buildFromGenerator(name, new Generator {
+        val realName = name.getOrElse(UUID.randomUUID().toString)
+        (new Builder).buildFromGenerator(realName, new Generator {
           def getCode = content
         })
     }
+
+    implicit def contentToSource(content:String) = toSource(None -> content)
+
     val c = compiler
-    c.compile("empty.js" -> "", fileName -> code, options)
+    c.compile("", code, options)
     c.toSource
   }
 }
