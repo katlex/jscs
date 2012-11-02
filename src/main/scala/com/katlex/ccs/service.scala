@@ -14,25 +14,20 @@ object Server extends Logging {
     }
   }
 
-  private object CompiledConfig {
+  private object CompilationConfig {
     lazy val JS_EXT = """\.js$""".r
     def unapply[T](req:HttpRequest[T]) = req match {
-      case GET_@(fileName :: Nil) => Some(JS_EXT.replaceFirstIn(fileName, ""))
+      case GET_@(fileName :: Nil) =>
+        Config.parse(JS_EXT.replaceFirstIn(fileName, ""))
       case _ => None
     }
   }
 
   private class CompileByConfigApp extends unfiltered.filter.Plan {
     def intent = {
-      case CompiledConfig(configName) =>
-        logger.debug("Config '%s' was requested" format configName)
-        Ok ~> JsContent ~> ResponseString(
-          JsCompiler.compile("""
-                               |if (console && console.log) {
-                               | console.log("hello world");
-                               |}
-                             """.stripMargin)
-        )
+      case CompilationConfig(config) =>
+        logger.debug("Config '%s' was requested" format config.name)
+        Ok ~> JsContent ~> ResponseString(JsCompiler.compile(config.files))
     }
   }
 
