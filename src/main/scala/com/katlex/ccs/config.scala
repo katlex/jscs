@@ -7,6 +7,7 @@ import net.liftweb.common.{Failure, Full, Box}
 import Box._
 import java.util.regex.Matcher
 import com.katlex.ccs.Config.OnDiskSourceFile
+import util.matching.Regex
 
 object Config extends Logging with ConfigTransformers {
   abstract class SourceFile(val fileName:String) {
@@ -67,7 +68,8 @@ trait ConfigTransformers extends FileUtil {
   object ConfigTransformer {
     def unapply(cmd:String):Option[ConfigTransformer] =
       VarDeclaration.unapply(cmd) or
-        SrcRootDeclaration.unapply(cmd)
+      SrcRootDirective.unapply(cmd) or
+      ExcludeDirective.unapply(cmd)
   }
   trait ConfigTransformer {
     def apply(conf:Config):Box[Config]
@@ -91,14 +93,14 @@ trait ConfigTransformers extends FileUtil {
   /**
    * Source root declaration e.g. srcRoot $BASE
    */
-  object SrcRootDeclaration {
+  object SrcRootDirective {
     val R = """srcRoot (.*)""".r
     def unapply(cmd:String) = cmd match {
-      case R(root) => Some(new SrcRootDeclaration(root))
+      case R(root) => Some(new SrcRootDirective(root))
       case _ => None
     }
   }
-  class SrcRootDeclaration(root:String) extends ConfigTransformer {
+  class SrcRootDirective(root:String) extends ConfigTransformer {
     def apply(conf: Config) =
       new File(conf.expandVars(root)) match {
         case Directory(dir) =>
@@ -106,5 +108,21 @@ trait ConfigTransformers extends FileUtil {
           Full(conf.copy(files = conf.files ++ files.map(f => new OnDiskSourceFile(f))))
         case f => Failure("Bad source root '%s'" format f.getAbsolutePath)
       }
+  }
+
+  /**
+   * Exclude directive to exclude some paths from the collected sources
+   */
+  object ExcludeDirective {
+    val R = "exclude (.*)".r
+    def unapply(cmd:String) = cmd match {
+      case R(filterString) => Some(new ExcludeDirective(filterString.r))
+      case _ => None
+    }
+  }
+  class ExcludeDirective(filter:Regex) extends ConfigTransformer {
+    def apply(conf: Config) = Full(conf.copy(files = conf.files.filterNot {
+      sourceFile => filter.findFirstIn(sourceFile.fileName).isDefined
+    }))
   }
 }
