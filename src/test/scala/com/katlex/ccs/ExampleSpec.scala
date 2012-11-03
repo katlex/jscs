@@ -1,12 +1,12 @@
-import org.specs._
+package com.katlex.ccs
 
-import dispatch._
+import org.specs._
 
 object ExampleSpec extends Specification with unfiltered.spec.jetty.Served {
   
   import dispatch._
   
-  def setup = { _.filter(new App) }
+  def setup = { _.filter(new Server.CompileConfigApp) }
   
   val http = new Http
   

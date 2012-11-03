@@ -10,6 +10,7 @@ libraryDependencies ++= Seq(
   "org.clapper" %% "avsl" % "0.4",
   "org.clapper" % "grizzled-slf4j_2.10" % "1.0.1",
   "com.google.javascript" % "closure-compiler" % "r2180",
+  "net.liftweb" %% "lift-util" % "2.5-M2",
   "net.databinder" %% "unfiltered-spec" % "0.6.4" % "test"
 )
 

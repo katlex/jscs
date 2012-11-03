@@ -21,7 +21,7 @@ object JsCompiler extends Logging {
       }
 
     make(
-      CompilationLevel.WHITESPACE_ONLY,
+      CompilationLevel.SIMPLE_OPTIMIZATIONS,
       WarningLevel.QUIET
     )
   }
@@ -39,11 +39,13 @@ object JsCompiler extends Logging {
     c.toSource
   }
 
-  def compile(files:List[File]) = {
+  def compile(config:Config) = {
     import scala.collection.JavaConversions._
-    val sourceFiles = files.map { file =>
-      builder.buildFromFile(file)
-    }
+    val sourceFiles = config.files.map { file =>
+      file.withInputStream { is =>
+        builder.buildFromInputStream(file.fileName, is)
+      }
+    } .toList
     val c = compiler
     c.compile(List.empty[SourceFile], sourceFiles, options)
     c.toSource

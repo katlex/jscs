@@ -2,34 +2,109 @@ package com.katlex.ccs
 
 import grizzled.slf4j.Logging
 import io.Source
-import java.io.File
+import java.io.{FileInputStream, InputStream, File}
+import net.liftweb.common.{Failure, Full, Box}
+import Box._
+import java.util.regex.Matcher
+import com.katlex.ccs.Config.OnDiskSourceFile
 
-object Config extends Logging {
-  case class FileOps(f:File) {
-    def /(dir:String) = new File(f.getAbsolutePath + File.separator + dir)
+object Config extends Logging with ConfigTransformers {
+  abstract class SourceFile(val fileName:String) {
+    protected def inputStream:InputStream
+    def withInputStream[T](body: InputStream => T) = {
+      val is = inputStream
+      try {
+        body(is)
+      } finally {
+        is.close()
+      }
+    }
   }
-  implicit def toFileOps(f:File):FileOps = FileOps(f)
+  class OnDiskSourceFile(file:File) extends SourceFile(file.getAbsolutePath) {
+    protected def inputStream = new FileInputStream(file)
+  }
 
-  lazy val home = sys.props.get("user.home").map(new File(_))
   lazy val configDir =
-    home.flatMap { home =>
+    Box(home).flatMap { home =>
       (home / ".closure-compiler-server") match {
-        case f:File if f.exists && f.isDirectory => Some(f)
-        case _ => None
+        case Directory(dir) => Full(dir)
+        case f:File => Failure("Config dir should exist and be a directory: " + f.getAbsolutePath)
+      }
+    } ?~ "Home dir not found"
+
+  def parse(configName:String):Box[Config] =
+    configDir flatMap { configDir =>
+      (configDir / configName) match {
+        case ReadableFile(f) =>
+          val configBox:Box[Config] = Full(Config(configName, Set(), Map()))
+          val lines = Source.fromFile(f).getLines.map(_.trim).zipWithIndex.
+                        filterNot(_._1 == "").
+                        filterNot(_._1.startsWith("#"))
+          (configBox /: lines) {
+            case (Full(conf), (ConfigTransformer(transform), _)) =>
+              transform(conf)
+            case (Full(_), (line, lineNum)) =>
+              Failure(
+                "Config file '%s' contains an error at line %d: %s"
+                  format (f.getAbsolutePath, lineNum, line)
+              )
+            case (failure, _) => failure
+          }
+        case f:File => Failure("Config file '%s' can not be read" format f.getAbsolutePath)
       }
     }
-
-  def parse(name:String):Option[Config] =
-    configDir flatMap { conf =>
-      (conf / name) match {
-        case f:File if f.isFile && f.canRead =>
-          val lines = Source.fromFile(f).getLines()
-          logger.debug("Parsing lines: \n" + lines.mkString("\n"))
-          Some(Config(name, List.empty[File]))
-        case _ => None
-      }
-    }
-
 }
 
-case class Config(name:String, files:List[File])
+case class Config(name:String, files:Set[Config.SourceFile], variables:Map[String, String]) {
+  def expandVars(str:String) =
+    (str /: variables) {
+      case (str, (varName, value)) =>
+        str.replaceAll("\\$%s" format varName, Matcher.quoteReplacement(value))
+    }
+}
+
+trait ConfigTransformers extends FileUtil {
+  object ConfigTransformer {
+    def unapply(cmd:String):Option[ConfigTransformer] =
+      VarDeclaration.unapply(cmd) or
+        SrcRootDeclaration.unapply(cmd)
+  }
+  trait ConfigTransformer {
+    def apply(conf:Config):Box[Config]
+  }
+
+  /**
+   * Variable declaration e.g. BASE=/home/user/sources
+   */
+  object VarDeclaration {
+    val R = """([^=]+)=([^=]+)""".r
+    def unapply(cmd:String) = cmd match {
+      case R(varName, value) =>
+        Some(new VarDeclaration(varName.trim, value.trim))
+      case _ => None
+    }
+  }
+  class VarDeclaration(name:String, value:String) extends ConfigTransformer {
+    def apply(conf: Config) = Full(conf.copy(variables = conf.variables + (name -> value)))
+  }
+
+  /**
+   * Source root declaration e.g. srcRoot $BASE
+   */
+  object SrcRootDeclaration {
+    val R = """srcRoot (.*)""".r
+    def unapply(cmd:String) = cmd match {
+      case R(root) => Some(new SrcRootDeclaration(root))
+      case _ => None
+    }
+  }
+  class SrcRootDeclaration(root:String) extends ConfigTransformer {
+    def apply(conf: Config) =
+      new File(conf.expandVars(root)) match {
+        case Directory(dir) =>
+          val files = dir ** "\\.js$".r
+          Full(conf.copy(files = conf.files ++ files.map(f => new OnDiskSourceFile(f))))
+        case f => Failure("Bad source root '%s'" format f.getAbsolutePath)
+      }
+  }
+}
