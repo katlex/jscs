@@ -1,12 +1,15 @@
-package com.katlex.jscs
+package com.katlex
+package jscs
 
 import unfiltered.request._
 import unfiltered.response._
 
-import grizzled.slf4j.Logging
 import net.liftweb.common.{Full, Failure}
+import launch.{EntryPoint, LauncherAdapter}
 
-object Server extends Logging {
+object Server extends EntryPoint {
+
+  class Launcher extends LauncherAdapter(this)
 
   private object GET_@ {
     def unapply[T](req:HttpRequest[T]) = req match {
@@ -43,12 +46,13 @@ object Server extends Logging {
     }
   }
 
-  def main(args: Array[String]) {
+  def run(args: Array[String]) = {
     val http = unfiltered.jetty.Http.local(7770)
     http.filter(new CompileConfigApp).run({ svr =>
         //unfiltered.util.Browser.open(http.url + "test.js")
       }, { svr =>
         logger.info("shutting down server")
       })
+    0
   }
 }

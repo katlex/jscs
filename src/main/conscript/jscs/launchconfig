@@ -2,7 +2,7 @@
   version: 1.0-SNAPSHOT
   org: com.katlex
   name: jscs
-  class: com.katlex.jscs.Server
+  class: com.katlex.jscs.Server.Launcher
 [scala]
   version: 2.9.2
 [repositories]

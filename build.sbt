@@ -15,9 +15,11 @@ libraryDependencies ++= Seq(
   "org.clapper" % "grizzled-slf4j_2.10" % "1.0.1",
   "com.google.javascript" % "closure-compiler" % "r2180",
   "net.liftweb" %% "lift-util" % "2.5-M2",
-  "net.databinder" %% "unfiltered-spec" % "0.6.4" % "test"
+  "net.databinder" %% "unfiltered-spec" % "0.6.4" % "test",
+  "com.katlex" %% "launch-utils" % "1.0"
 )
 
 resolvers ++= Seq(
-  "java m2" at "http://download.java.net/maven/2"
+  "java m2" at "http://download.java.net/maven/2",
+  "katlex repo" at "http://katlex.github.com/maven2/release"
 )
