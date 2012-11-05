@@ -6,6 +6,5 @@
 [scala]
   version: 2.9.2
 [repositories]
-  scala-tools-releases
   maven-central
   katlex-snaphots: http://katlex.github.com/maven2/snapshots
