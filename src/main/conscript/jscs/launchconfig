@@ -8,3 +8,4 @@
 [repositories]
   maven-central
   katlex-snaphots: http://katlex.github.com/maven2/snapshots
+  katlex: http://katlex.github.com/maven2/releases
