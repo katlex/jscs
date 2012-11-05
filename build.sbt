@@ -16,10 +16,11 @@ libraryDependencies ++= Seq(
   "com.google.javascript" % "closure-compiler" % "r2180",
   "net.liftweb" %% "lift-util" % "2.5-M2",
   "net.databinder" %% "unfiltered-spec" % "0.6.4" % "test",
-  "com.katlex" %% "launch-utils" % "1.0"
+  "com.katlex" %% "launch-utils" % "1.0",
+  "org.scala-sbt" % "launcher-interface" % "0.12.0" % "provided"
 )
 
 resolvers ++= Seq(
   "java m2" at "http://download.java.net/maven/2",
-  "katlex repo" at "http://katlex.github.com/maven2/release"
+  "katlex repo" at "http://katlex.github.com/maven2/releases"
 )
