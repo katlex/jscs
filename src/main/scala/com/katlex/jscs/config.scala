@@ -1,4 +1,4 @@
-package com.katlex.ccs
+package com.katlex.jscs
 
 import grizzled.slf4j.Logging
 import io.Source
@@ -6,7 +6,7 @@ import java.io.{FileInputStream, InputStream, File}
 import net.liftweb.common.{Failure, Full, Box}
 import Box._
 import java.util.regex.Matcher
-import com.katlex.ccs.Config.OnDiskSourceFile
+import com.katlex.jscs.Config.OnDiskSourceFile
 import util.matching.Regex
 
 object Config extends Logging with ConfigTransformers {

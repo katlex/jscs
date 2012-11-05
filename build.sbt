@@ -1,8 +1,10 @@
-name := "Closure Compiler Server"
+name := "Javascript Compiler Server"
+
+description := "An HTTP service which simply does compile your JS on demand"
 
 organization := "com.katlex"
 
-moduleName := "ccs"
+moduleName := "jscs"
 
 version := "1.0-SNAPSHOT"
 

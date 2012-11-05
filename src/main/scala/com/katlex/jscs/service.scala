@@ -1,4 +1,4 @@
-package com.katlex.ccs
+package com.katlex.jscs
 
 import unfiltered.request._
 import unfiltered.response._

@@ -1,4 +1,4 @@
-package com.katlex.ccs
+package com.katlex.jscs
 
 import grizzled.slf4j.Logging
 import java.util.UUID

@@ -1,8 +1,8 @@
 [app]
   version: 1.0-SNAPSHOT
   org: com.katlex
-  name: ccs
-  class: com.katlex.ccs.Server
+  name: jscs
+  class: com.katlex.jscs.Server
 [scala]
   version: 2.9.2
 [repositories]
