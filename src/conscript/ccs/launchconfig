@@ -1,0 +1,11 @@
+[app]
+  version: 1.0-SNAPSHOT
+  org: com.katlex
+  name: css
+  class: com.katlex.css.Server
+[scala]
+  version: 2.9.2
+[repositories]
+  scala-tools-releases
+  maven-central
+  katlex-snaphots: http://katlex.github.com/maven2/snapshots
