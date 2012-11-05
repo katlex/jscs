@@ -27,16 +27,8 @@ object JsCompiler extends Logging {
   }
 
   def compile(code:String) = {
-    implicit def toSource(nameContent: (Option[String], String)) = nameContent match {
-      case (name, content) =>
-        val realName = name.getOrElse(uuid)
-        builder.buildFromCode(realName, content)
-    }
-    implicit def contentToSource(content:String) = toSource(None -> content)
-
-    val c = compiler
-    c.compile("", code, options)
-    c.toSource
+    implicit def str2SourceFile(str:String) = builder.buildFromCode(uuid, str)
+    compileWithMethod(_.compile("", code, options))
   }
 
   def compile(config:Config) = {
@@ -46,8 +38,12 @@ object JsCompiler extends Logging {
         builder.buildFromInputStream(file.fileName, is)
       }
     } .toList
+    compileWithMethod(_.compile(List.empty[SourceFile], sourceFiles, options))
+  }
+
+  private def compileWithMethod[T](method:Compiler => T) = {
     val c = compiler
-    c.compile(List.empty[SourceFile], sourceFiles, options)
+    method(c)
     c.toSource
   }
 

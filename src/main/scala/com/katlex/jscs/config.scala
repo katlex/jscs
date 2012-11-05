@@ -9,7 +9,7 @@ import java.util.regex.Matcher
 import com.katlex.jscs.Config.OnDiskSourceFile
 import util.matching.Regex
 
-object Config extends Logging with ConfigTransformers {
+object Config extends Logging with ConfigTransformers with BoxUtil {
   abstract class SourceFile(val fileName:String) {
     protected def inputStream:InputStream
     def withInputStream[T](body: InputStream => T) = {
@@ -37,19 +37,18 @@ object Config extends Logging with ConfigTransformers {
     configDir flatMap { configDir =>
       (configDir / configName) match {
         case ReadableFile(f) =>
-          val configBox:Box[Config] = Full(Config(configName, Set(), Map()))
-          val lines = Source.fromFile(f).getLines.map(_.trim).zipWithIndex.
+          val config = Config(configName, Set(), Map())
+          val linesWithNums = Source.fromFile(f).getLines.map(_.trim).zipWithIndex.
                         filterNot(_._1 == "").
                         filterNot(_._1.startsWith("#"))
-          (configBox /: lines) {
+          (config /~: linesWithNums) {
             case (Full(conf), (ConfigTransformer(transform), _)) =>
               transform(conf)
-            case (Full(_), (line, lineNum)) =>
+            case (_, (line, lineNum)) =>
               Failure(
                 "Config file '%s' contains an error at line %d: %s"
                   format (f.getAbsolutePath, lineNum, line)
               )
-            case (failure, _) => failure
           }
         case f:File => Failure("Config file '%s' can not be read" format f.getAbsolutePath)
       }
@@ -105,7 +104,7 @@ trait ConfigTransformers extends FileUtil {
       new File(conf.expandVars(root)) match {
         case Directory(dir) =>
           val files = dir ** "\\.js$".r
-          Full(conf.copy(files = conf.files ++ files.map(f => new OnDiskSourceFile(f))))
+          Full(conf.copy(files = conf.files ++ files.map(new OnDiskSourceFile(_))))
         case f => Failure("Bad source root '%s'" format f.getAbsolutePath)
       }
   }
