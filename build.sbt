@@ -1,6 +1,8 @@
+name := "Closure Compiler Server"
+
 organization := "com.katlex"
 
-name := "closure-compiler-server"
+moduleName := "ccs"
 
 version := "1.0-SNAPSHOT"
 
