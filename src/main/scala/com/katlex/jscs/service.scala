@@ -3,13 +3,15 @@ package jscs
 
 import unfiltered.request._
 import unfiltered.response._
+import unfiltered.filter._
 
 import net.liftweb.common.{Full, Failure}
 import launch.{EntryPoint, LauncherAdapter}
+import grizzled.slf4j.Logging
 
-object Server extends EntryPoint {
+class ServerApp extends LauncherAdapter(Server)
 
-  class Launcher extends LauncherAdapter(this)
+object Server extends EntryPoint with Logging {
 
   private object GET_@ {
     def unapply[T](req:HttpRequest[T]) = req match {
@@ -26,7 +28,7 @@ object Server extends EntryPoint {
     }
   }
 
-  class CompileConfigApp extends unfiltered.filter.Plan {
+  class CompileConfigApp extends Plan {
     def intent = {
       case CompilationConfig(configName) =>
         logger.debug("Config '%s' was requested" format configName)
