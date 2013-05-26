@@ -2,10 +2,7 @@
 
 ## What's this? ##
 
-## Sub Heading
-
 Javascript compilation service is a set of [Scala][3] routines around well known libs, helping to build and develop Javascript code (as well as Coffeescript code too in future).
-
 
 
 There are ideally three ways of using it:
